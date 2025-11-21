@@ -1,22 +1,24 @@
 package com.digitalinnovation.beerstock.service;
 
-import com.digitalinnovation.beerstock.dto.BeerDTO;
-import com.digitalinnovation.beerstock.entity.Beer;
-import com.digitalinnovation.beerstock.enums.BeerType;
-import com.digitalinnovation.beerstock.mapper.BeerMapper;
-import com.digitalinnovation.beerstock.repository.BeerRepository;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import com.digitalinnovation.beerstock.dto.BeerDTO;
+import com.digitalinnovation.beerstock.entity.Beer;
+import com.digitalinnovation.beerstock.enums.BeerType;
+import com.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
+import com.digitalinnovation.beerstock.mapper.BeerMapper;
+import com.digitalinnovation.beerstock.repository.BeerRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class BeerServiceTest {
@@ -28,10 +30,10 @@ public class BeerServiceTest {
 	private BeerMapper beerMapper;
 
 	@InjectMocks
-	private BeerService beerService; // <--- VAI FICAR VERMELHO (Ainda não existe!)
+	private BeerService beerService;
 
 	@Test
-	void whenBeerInformedThenItShouldBeCreated() {
+	void whenBeerInformedThenItShouldBeCreated() throws BeerAlreadyRegisteredException {
 		// ARRANGE (Cenário)
 		BeerDTO beerDTO = BeerDTO.builder().name("Brahma").brand("Ambev").max(10).quantity(5).type(BeerType.LAGER)
 				.build();
@@ -45,7 +47,6 @@ public class BeerServiceTest {
 		when(beerMapper.toDTO(expectedSavedBeer)).thenReturn(beerDTO);
 
 		// ACT (Execução)
-		// <--- VAI FICAR VERMELHO (Método não existe!)
 		BeerDTO createdBeerDTO = beerService.createBeer(beerDTO);
 
 		// ASSERT (Verificação)
