@@ -1,6 +1,6 @@
 # 🍺 BeerStock API - TDD com Spring Boot
 
-Projeto desenvolvido durante o **Bootcamp da Digital Innovation One (DIO)**.
+Projeto desenvolvido na plataforma da **Digital Innovation One (DIO)**.
 O objetivo principal deste projeto foi o desenvolvimento de uma **API REST** para gerenciamento de estoques de cerveja, com foco prático na metodologia **TDD (Test Driven Development)** e na escrita de **Testes Unitários** robustos.
 
 ---
