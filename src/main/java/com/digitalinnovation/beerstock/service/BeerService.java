@@ -1,17 +1,20 @@
 package com.digitalinnovation.beerstock.service;
 
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.digitalinnovation.beerstock.dto.BeerDTO;
 import com.digitalinnovation.beerstock.entity.Beer;
 import com.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
 import com.digitalinnovation.beerstock.exception.BeerNotFoundException;
 import com.digitalinnovation.beerstock.exception.BeerStockExceededException;
+import com.digitalinnovation.beerstock.exception.BeerStockInsufficientException;
 import com.digitalinnovation.beerstock.mapper.BeerMapper;
 import com.digitalinnovation.beerstock.repository.BeerRepository;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor(onConstructor = @__(@Autowired))
@@ -29,7 +32,7 @@ public class BeerService {
 
 	public BeerDTO increment(Long id, int quantityToIncrement)
 			throws BeerNotFoundException, BeerStockExceededException {
-		// Reutilizando o método auxiliar
+
 		Beer beerToIncrementStock = verifyIfExists(id);
 
 		if (beerToIncrementStock.getQuantity() + quantityToIncrement > beerToIncrementStock.getMax()) {
@@ -42,8 +45,6 @@ public class BeerService {
 		return beerMapper.toDTO(incrementedBeerStock);
 	}
 
-	// --- Métodos Auxiliares (Privados) ---
-
 	private void verifyIfIsAlreadyRegistered(String name) throws BeerAlreadyRegisteredException {
 		Optional<Beer> optSavedBeer = beerRepository.findByName(name);
 		if (optSavedBeer.isPresent()) {
@@ -51,8 +52,21 @@ public class BeerService {
 		}
 	}
 
-	// Esse método será MUITO útil quando criarmos o 'decrement' e 'delete'
 	private Beer verifyIfExists(Long id) throws BeerNotFoundException {
 		return beerRepository.findById(id).orElseThrow(() -> new BeerNotFoundException(id));
+	}
+
+	public BeerDTO decrement(Long id, int quantityToDecrement)
+			throws BeerNotFoundException, BeerStockInsufficientException {
+		Beer beerToDecrementStock = verifyIfExists(id);
+
+		if (beerToDecrementStock.getQuantity() < quantityToDecrement) {
+			throw new BeerStockInsufficientException(id, quantityToDecrement);
+		}
+
+		beerToDecrementStock.setQuantity(beerToDecrementStock.getQuantity() - quantityToDecrement);
+		Beer decrementedBeerStock = beerRepository.save(beerToDecrementStock);
+
+		return beerMapper.toDTO(decrementedBeerStock);
 	}
 }

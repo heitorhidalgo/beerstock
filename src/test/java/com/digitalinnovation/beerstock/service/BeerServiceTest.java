@@ -20,6 +20,7 @@ import com.digitalinnovation.beerstock.enums.BeerType;
 import com.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
 import com.digitalinnovation.beerstock.exception.BeerNotFoundException;
 import com.digitalinnovation.beerstock.exception.BeerStockExceededException;
+import com.digitalinnovation.beerstock.exception.BeerStockInsufficientException;
 import com.digitalinnovation.beerstock.mapper.BeerMapper;
 import com.digitalinnovation.beerstock.repository.BeerRepository;
 
@@ -37,26 +38,24 @@ public class BeerServiceTest {
 	@InjectMocks
 	private BeerService beerService;
 
-	// --- TESTES DE CRIAÇÃO ---
-
 	@Test
 	void whenBeerInformedThenItShouldBeCreated() throws BeerAlreadyRegisteredException {
-		// ARRANGE
+		
 		BeerDTO beerDTO = BeerDTO.builder().name("Brahma").brand("Ambev").max(10).quantity(5).type(BeerType.LAGER)
 				.build();
 		Beer expectedSavedBeer = Beer.builder().id(1L).name("Brahma").brand("Ambev").max(10).quantity(5)
 				.type(BeerType.LAGER).build();
 
-		// Mocks
+		
 		when(beerRepository.findByName(beerDTO.getName())).thenReturn(Optional.empty());
 		when(beerMapper.toModel(beerDTO)).thenReturn(expectedSavedBeer);
 		when(beerRepository.save(expectedSavedBeer)).thenReturn(expectedSavedBeer);
 		when(beerMapper.toDTO(expectedSavedBeer)).thenReturn(beerDTO);
 
-		// ACT
+		
 		BeerDTO createdBeerDTO = beerService.createBeer(beerDTO);
 
-		// ASSERT
+		
 		assertThat(createdBeerDTO.getId(), is(equalTo(beerDTO.getId())));
 		assertThat(createdBeerDTO.getName(), is(equalTo(beerDTO.getName())));
 		assertThat(createdBeerDTO.getQuantity(), is(equalTo(beerDTO.getQuantity())));
@@ -64,50 +63,49 @@ public class BeerServiceTest {
 
 	@Test
 	void whenAlreadyRegisteredBeerInformedThenAnExceptionShouldBeThrown() {
-		// ARRANGE
+		
 		BeerDTO beerDTO = BeerDTO.builder().name("Brahma").brand("Ambev").max(10).quantity(5).type(BeerType.LAGER)
 				.build();
 		Beer duplicatedBeer = Beer.builder().id(1L).name("Brahma").brand("Ambev").max(10).quantity(5)
 				.type(BeerType.LAGER).build();
 
-		// Mock: Simula que já existe no banco
+		
 		when(beerRepository.findByName(beerDTO.getName())).thenReturn(Optional.of(duplicatedBeer));
 
-		// ACT & ASSERT
+		
 		assertThrows(BeerAlreadyRegisteredException.class, () -> beerService.createBeer(beerDTO));
 	}
 
-	// --- TESTES DE INCREMENTO ---
+	
 
 	@Test
 	void whenIncrementIsCalledThenUpdateStock() throws BeerNotFoundException, BeerStockExceededException {
-		// 1. ARRANGE
+		
 		BeerDTO expectedBeerDTO = BeerDTO.builder().id(1L).name("Brahma").brand("Ambev").max(50).quantity(10)
 				.type(BeerType.LAGER).build();
 
-		// CORREÇÃO IMPORTANTE: Criamos a Entidade manualmente para evitar o erro do
-		// Mapper retornar null
+		
 		Beer expectedBeer = Beer.builder().id(1L).name("Brahma").brand("Ambev").max(50).quantity(10)
 				.type(BeerType.LAGER).build();
 
-		// Mocks
+		
 		when(beerRepository.findById(expectedBeerDTO.getId())).thenReturn(Optional.of(expectedBeer));
 		when(beerRepository.save(expectedBeer)).thenReturn(expectedBeer);
 
 		int quantityToIncrement = 10;
 		int expectedQuantityAfterIncrement = 20;
 
-		// Objeto esperado após o incremento (para o retorno do mapper)
+		
 		BeerDTO expectedBeerDTOAfterIncrement = BeerDTO.builder().id(1L).name("Brahma").brand("Ambev").max(50)
 				.quantity(expectedQuantityAfterIncrement).type(BeerType.LAGER).build();
 
-		// Mock do mapper final
+		
 		when(beerMapper.toDTO(expectedBeer)).thenReturn(expectedBeerDTOAfterIncrement);
 
-		// 2. ACT
+		
 		BeerDTO incrementedBeerDTO = beerService.increment(expectedBeerDTO.getId(), quantityToIncrement);
 
-		// 3. ASSERT
+		
 		assertThat(incrementedBeerDTO.getQuantity(), is(equalTo(expectedQuantityAfterIncrement)));
 		assertThat(incrementedBeerDTO.getMax(), is(equalTo(expectedBeerDTO.getMax())));
 	}
@@ -131,9 +129,28 @@ public class BeerServiceTest {
 
 		when(beerRepository.findById(expectedBeerDTO.getId())).thenReturn(Optional.of(expectedBeer));
 
-		int quantityToIncrement = 45; // 10 + 45 = 55 (> 50)
+		int quantityToIncrement = 45; 
 
 		assertThrows(BeerStockExceededException.class,
 				() -> beerService.increment(expectedBeerDTO.getId(), quantityToIncrement));
+	}
+
+	@Test
+	void whenDecrementIsCalledWithInvalidQuantityThenThrowException() {
+		int quantityToDecrement = 80; 
+
+		
+		BeerDTO expectedBeerDTO = BeerDTO.builder().name("Brahma").brand("Ambev").max(50).quantity(10)
+				.type(BeerType.LAGER).build();
+
+		Beer expectedBeer = Beer.builder().id(1L).name("Brahma").brand("Ambev").max(50).quantity(10)
+				.type(BeerType.LAGER).build();
+
+		
+		when(beerRepository.findById(expectedBeerDTO.getId())).thenReturn(Optional.of(expectedBeer));
+
+		
+		assertThrows(BeerStockInsufficientException.class,
+				() -> beerService.decrement(expectedBeerDTO.getId(), quantityToDecrement));
 	}
 }
